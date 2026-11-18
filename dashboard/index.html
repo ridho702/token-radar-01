@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — pre-token protocols ranked by implied value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="skip" href="#board">Skip to the board</a>
+<header class="top">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">&#9679;</span>
+    <div>
+      <h1>Token Radar</h1>
+      <p class="tagline">Which pre-token protocol is worth farming next — and what to do about it.</p>
+    </div>
+  </div>
+  <div class="asof" id="asof"></div>
+</header>
+<main id="board" tabindex="-1">
+  <section class="stats" id="stats" aria-label="Snapshot summary"></section>
+  <nav class="tabs" aria-label="Views">
+    <button type="button" data-tab="board" class="active">Board</button>
+    <button type="button" data-tab="live">Live tokens</button>
+    <button type="button" data-tab="model">How the model works</button>
+  </nav>
+  <section id="view-board">
+    <div class="filters" role="search">
+      <label>Search <input id="q" type="search" placeholder="Name or slug…" autocomplete="off"></label>
+      <label>Category <select id="category"><option value="all">All categories</option></select></label>
+      <label>Chain <select id="chain"><option value="all">All chains</option></select></label>
+      <label>Min TVL <select id="mintvl">
+        <option value="0">Any</option>
+        <option value="5000000">$5M+</option>
+        <option value="50000000">$50M+</option>
+        <option value="100000000">$100M+</option>
+        <option value="1000000000">$1B+</option>
+      </select></label>
+      <label class="check"><input id="watchlist" type="checkbox"> Watchlist only</label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="tablewrap">
+      <table id="table">
+        <thead><tr>
+          <th data-sort="rank">Rank</th>
+          <th data-sort="name">Protocol</th>
+          <th data-sort="category">Category</th>
+          <th data-sort="chains">Chains</th>
+          <th data-sort="tvl_usd">TVL</th>
+          <th data-sort="change_7d">7d</th>
+          <th data-sort="age_days">Age</th>
+          <th data-sort="implied_value_usd">Implied value</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="note" id="board-note"></p>
+  </section>
+  <section id="view-live" hidden>
+    <p class="lede">Protocols whose token already trades. The board shows the market's own value for these — never a model's guess — and they are the comparables the multiples come from.</p>
+    <div class="tablewrap">
+      <table id="livetable">
+        <thead><tr>
+          <th>Protocol</th><th>Category</th><th>Chains</th><th>TVL</th><th>Market cap</th><th>Mcap / TVL</th><th>7d</th>
+        </tr></thead>
+        <tbody id="liverows"></tbody>
+      </table>
+    </div>
+  </section>
+  <section id="view-model" hidden>
+    <div id="model-explainer"></div>
+    <h2>Category multiples</h2>
+    <p class="lede">Median market-cap-per-TVL of the live-token protocols in each category. Categories with fewer than three live protocols use the global median.</p>
+    <div class="tablewrap">
+      <table id="comptable">
+        <thead><tr><th>Category</th><th>Live comparables</th><th>Multiple</th></tr></thead>
+        <tbody id="comprows"></tbody>
+      </table>
+    </div>
+    <h2>Market-fit check</h2>
+    <p class="lede" id="fit-text"></p>
+    <canvas id="fitchart" width="880" height="360" aria-label="Scatter chart of market cap against TVL for live-token protocols"></canvas>
+    <p class="note">The fit is a check on the model, never an input to it. The board's values come from the category multiples above.</p>
+  </section>
+</main>
+<aside id="drawer" class="drawer" hidden aria-label="Protocol detail"></aside>
+<footer class="foot">
+  <p>Data: the sealed snapshot, fetched once from the DefiLlama public API. “Records no token” means the record carries none — a protocol may still have a token its record does not carry. Implied values are this radar's own claim, not a prediction that a token will be issued or what it will be worth. Nothing here is financial advice.</p>
+</footer>
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
