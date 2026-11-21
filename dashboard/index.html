@@ -1,27 +1,57 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Token Launch Radar — 614 pre-token protocols, ranked by implied value</title>
-<link rel="stylesheet" href="styles.css"></head>
-<body><header><h1>Token Launch Radar</h1>
-<p class="sub">614 protocols that record no token, ranked by implied value — fair value from a regression fitted on 144 token protocols, times the odds of launching, from peers' track record. Snapshot 2026-11-14.</p>
-<div id="kpis" class="kpis"></div></header>
-<main>
-<section class="panel"><h2>How this radar works</h2>
-<p>Stage 1 fits <b>log(market cap) = a + b·log(TVL)</b> on the 144 protocols whose token trades (128 with mcap &gt; 0 and TVL &gt; 0; 15 with mcap = 0 are dead tokens and are excluded). Stage 2 fits the residual on 7-day growth and log(age) — growth and age move the multiple only slightly in the data, so their effect is shrunk ×0.5 and clamped. <b>Token odds</b> come from each category's launch rate (shrunk toward the global 19%) times an age-band factor. <b>Implied value = fair value × odds</b> — an expected value, not a prediction of if or when a token launches. No protocol name is hardcoded. Growth is in percent in the snapshot (÷100, clamped −0.9…+5.0); a missing listing date counts as 365 days. Gas figures are planning estimates, not live quotes.</p>
-<div class="tabs"><button data-tab="board" class="on">Board</button><button data-tab="model">Model &amp; validation</button><button data-tab="ref">Token protocols (fitting set)</button></div>
-<div id="tab-board">
-<div class="filters"><input id="q" type="search" placeholder="Search name or slug…" aria-label="Search">
-<select id="cat" aria-label="Category"><option value="">All categories</option></select>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Launch Radar</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+<h1 id="title">Token Launch Radar</h1>
+<p class="sub">Pre-token protocols ranked by expected value (fitted fair value &times; token-launch odds), from the 2026-11-14 DefiLlama snapshot. No name is hardcoded.</p>
+</header>
+<section id="kpis" class="panel"></section>
+<section class="panel">
+<h2>Find a protocol</h2>
+<div class="controls">
+<input id="q" type="search" placeholder="Search">
+<select id="cat"><option value="">All categories</option></select>
 <label><input id="wl" type="checkbox"> Watchlist only</label>
-<label>Min odds <input id="minodds" type="range" min="0" max="50" value="0" step="1"> <span id="minoddsV">0%</span></label>
-<span id="count"></span></div>
-<table><thead><tr><th data-s="rank">#</th><th data-s="name">Protocol</th><th data-s="cat">Category</th><th data-s="tvl">TVL</th><th data-s="growth">Growth 7d</th><th data-s="age">Age</th><th data-s="odds">Odds</th><th data-s="ev">Implied value</th></tr></thead>
-<tbody id="rows"></tbody></table>
-<div id="detail" class="detail"></div>
+<label>Min odds <select id="odds"><option value="0">any</option><option value="0.05">5%</option><option value="0.1">10%</option><option value="0.2">20%</option><option value="0.3">30%</option></select></label>
+<button id="reset">Reset</button>
 </div>
-<div id="tab-model" hidden><div id="model"></div></div>
-<div id="tab-ref" hidden><p>These 144 protocols already have a token that trades. They are the <b>fitting set</b> — their actual market caps trained the regression. They are <b>not</b> on the board and their values here are actual market caps, not estimates.</p><table><thead><tr><th>#</th><th>Protocol</th><th>Market cap (actual)</th></tr></thead><tbody id="refrows"></tbody></table></div>
-</section></main>
-<footer><p>Data: DefiLlama snapshot 2026-11-14. Implied values are this radar's own estimates, never a promise. Farm plans are planning estimates — check fees and risks yourself before moving funds.</p></footer>
-<script src="data.js"></script><script src="app.js"></script></body></html>
+<p id="count" class="muted"></p>
+<table id="board">
+<thead><tr><th data-k="rank">Rank</th><th data-k="name">Protocol</th><th data-k="cat">Category</th><th data-k="tvl">TVL</th><th data-k="growth">Growth 7d</th><th data-k="age">Age</th><th data-k="odds">Odds</th><th data-k="imp">Implied value</th></tr></thead>
+<tbody></tbody>
+</table>
+</section>
+<section id="detail" class="panel" hidden></section>
+<section class="panel">
+<h2>How this radar works</h2>
+<p><b>Value model.</b> A log-log regression fitted on the 144 token-bearing protocols in this snapshot: log(market cap) = intercept + slope &times; log(TVL), then a small second-stage adjustment for 7-day growth and protocol age (both coefficients halved, total adjustment clamped to &plusmn;0.35 log points). The second stage's intercept is <i>not</i> applied — it is a mean offset of the fitting subset, not a signal.</p>
+<p><b>Odds.</b> A protocol's chance of launching a token is estimated from its peers: its category's token rate, shrunk toward the 19% global rate, times an age-band factor (young protocols launch far less often), clamped to 2&ndash;50%.</p>
+<p><b>Expected value.</b> Implied value = fitted fair value &times; odds. It is the radar's own claim about what a token would be worth <i>if</i> one launched and the protocol's record stayed as it is — not a prediction that one will launch, or when.</p>
+<p><b>Farm plans.</b> Six concrete steps per protocol, in English, with amounts per tier (Small $100 / Medium $1,000 / Large $10,000), gas and time. Gas is a planning estimate, not a live quote.</p>
+<h3>Integrity strip</h3>
+<p>A pre-token protocol is left off this board when another protocol with the same brand stem already has a token trading (stem = slug minus a trailing version suffix, first segment). <span id="exclN"></span></p>
+<ul id="excluded"></ul>
+</section>
+<section class="panel">
+<h2>Model</h2>
+<div id="modelParams"></div>
+<h3>Validation — unseen data</h3>
+<table id="valTable"><thead><tr><th>Split</th><th>Model</th><th>Median |log error|</th><th>vs baseline</th><th>R&sup2;</th></tr></thead><tbody></tbody></table>
+<p class="muted">Log market caps are heavy-tailed, so R&sup2; is low for every model including the baseline — the decision metric is median error on unseen data.</p>
+</section>
+<section class="panel">
+<h2>Reference — 144 token-bearing protocols</h2>
+<p>The fitting set: their <i>actual</i> market caps trained the model. Not ranked here, never on the board.</p>
+<table id="refTable"><thead><tr><th>Protocol</th><th>Market cap</th></tr></thead><tbody></tbody></table>
+</section>
+<footer class="muted">Snapshot: DefiLlama protocols, as of 2026-11-14, floor $50,000,000. 15 token-bearing protocols with a $0 market cap were excluded from fitting. No listing date is treated as 365 days old.</footer>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
