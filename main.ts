@@ -181,9 +181,10 @@ function fmtMcap(v: number): string {
   return "$" + Math.round(v);
 }
 
-// Plain money for farm-plan costs: "$21.00" below $100, "$145" at/above.
+// Plain money for farm-plan costs: whole dollars at/above $1 ("$21"),
+// two decimals below $1 ("$0.50").
 function fmtMoney(v: number): string {
-  return v >= 100 ? "$" + Math.round(v) : "$" + v.toFixed(2);
+  return v >= 1 ? "$" + Math.round(v) : "$" + v.toFixed(2);
 }
 
 // ---------- Snapshot-derived features ----------
@@ -644,10 +645,18 @@ function main(): void {
     });
   }
 
-  // Choose the stage-1 version that wins the held-out validation (mean of the
-  // two seeds' median |log error|); walk-forward is reported as a check.
+  // Choose the stage-1 version: category intercepts only when they beat
+  // pooled by >=10% on held-out (mean of the two seeds' median |log error|)
+  // AND do not lose walk-forward (median |log error| on the latest 30%).
+  // Otherwise pooled: a thin held-out win that fails walk-forward does not
+  // justify the extra parameters (v4: held-out cat 1.080 vs pooled 1.114,
+  // only ~3% better, but walk-forward cat 1.258 vs pooled 1.214 — worse —
+  // so pooled wins).
+  const heldImprovement = (heldMeans.pooled - heldMeans.cat) / heldMeans.pooled;
+  const wfPooled = valRows.find((v) => v.label === "walk-forward" && v.kind === "pooled")!.med;
+  const wfCat = valRows.find((v) => v.label === "walk-forward" && v.kind === "cat")!.med;
   const chosenKind: "pooled" | "cat" =
-    heldMeans.pooled <= heldMeans.cat ? "pooled" : "cat";
+    heldImprovement >= 0.10 && wfCat <= wfPooled ? "cat" : "pooled";
 
   // ----- Final fit on all 128 -----
   const pooledFinal = fitStage1Pooled(fit);
@@ -730,7 +739,7 @@ function main(): void {
   // Dashboard data file: one compact string of rows (fields comma-separated,
   // rows pipe-separated). Rank is the row's position (rows are rank-ordered).
   // implied/tvl are stored in $ thousands, base-36; odds in hundredths;
-  // growth in hundredths; multiple in hundredths.
+  // growth in hundredths; multiple in ten-thousandths.
   const catsUsed = [...new Set(rows.map((r) => r.category ?? "Uncategorized"))].sort();
   const catIdx = new Map(catsUsed.map((c, i) => [c, i]));
   const chainSet = new Set<string>();
@@ -759,7 +768,7 @@ function main(): void {
         b36(Math.round(r.tvl_usd / 1000)),
         String(Math.round(r.growth * 100)),
         String(r.age_days),
-        String(Math.round(r.multiple * 100)),
+        String(Math.round(r.multiple * 10000)),
         String(chainIdx.get(rowChains[i].primary)),
         String(chainIdx.get(rowChains[i].cheap)),
       ].join(",");
@@ -863,7 +872,10 @@ function main(): void {
   }
   console.log(
     "held-out mean med: pooled=" + mean(heldPooled.map((v) => v.med)).toFixed(3) +
-      " cat=" + mean(heldCat.map((v) => v.med)).toFixed(3) + " -> chose " + chosenKind,
+      " cat=" + mean(heldCat.map((v) => v.med)).toFixed(3) +
+      " heldOutImprovement=" + ((heldImprovement) * 100).toFixed(1) + "%" +
+      " walkForward med: pooled=" + wfPooled.toFixed(3) + " cat=" + wfCat.toFixed(3) +
+      " rule: cat needs held-out improvement >=10% AND wf cat <= wf pooled -> chose " + chosenKind,
   );
   console.log(
     "integrity: excluded=" + excluded.length +

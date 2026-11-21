@@ -10,7 +10,7 @@
       slug: f[0], name: f[1], rank: idx + 1,
       imp: parseInt(f[2], 36) * 1000, odds: +f[3] / 100,
       cat: CATS[+f[4]], tvl: parseInt(f[5], 36) * 1000,
-      growth: +f[6] / 100, age: +f[7], mult: +f[8] / 100,
+      growth: +f[6] / 100, age: +f[7], mult: +f[8] / 10000,
       chain: CHAINS[+f[9]], cheap: CHAINS[+f[10]],
     };
   });
@@ -30,7 +30,7 @@
     if (v >= 1e3) return "$" + (v / 1e3).toFixed(2) + "K";
     return "$" + Math.round(v);
   }
-  function fmtMoney(v) { return v >= 100 ? "$" + Math.round(v) : "$" + v.toFixed(2); }
+  function fmtMoney(v) { return v >= 1 ? "$" + Math.round(v) : "$" + v.toFixed(2); }
   function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
   function title(slug) {
     return slug.split("-").map(function (p) {
@@ -174,14 +174,14 @@
       "<p class=\"muted\">" + esc(r.slug) + " · " + esc(r.cat) + " · main chain " + esc(r.chain) + "</p>" +
       "<div class=\"kpis2\">" +
       "<div>TVL<b>" + fmtUsd(r.tvl) + "</b></div>" +
-      "<div>Multiple<b>" + r.mult.toFixed(2) + "×</b></div>" +
+      "<div>Multiple<b>" + r.mult.toFixed(3) + "×</b></div>" +
       "<div>Growth 7d<b>" + (r.growth >= 0 ? "+" : "") + (r.growth * 100).toFixed(1) + "%</b></div>" +
       "<div>Age<b>" + ageStr(r.age) + "</b></div>" +
       "<div>Token odds<b>" + Math.round(r.odds * 100) + "%</b></div>" +
       "<div>Fair value<b>" + fmtUsd(fair) + "</b></div>" +
       "<div>Expected value<b>" + fmtUsd(r.imp) + "</b></div></div>" +
       "<p>Expected value = fair value &times; odds: " + fmtUsd(fair) + " &times; " + Math.round(r.odds * 100) + "% = " + fmtUsd(r.imp) + ". " +
-      "The multiple comes from the fitted model (slope " + META.model.slope + ", intercept " + META.model.intercept + ").</p>" +
+      "The multiple comes from the fitted model (pooled intercept; slope " + META.model.slope + ", intercept " + META.model.intercept + ").</p>" +
       "<h3>Farm plan</h3><ol>" + steps.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ol>";
     d.scrollIntoView({ behavior: "smooth", block: "start" });
   }
