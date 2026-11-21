@@ -24,7 +24,7 @@
 //     This is an expected value = fair value x probability of a launch; it is not
 //     a prediction that a token will launch, or when.
 
-import { readFileSync, writeFileSync, mkdirSync, cpSync, rmSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, cpSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildDossier } from "./vendor/makefun-board.ts";
@@ -723,7 +723,6 @@ function main(): void {
   }));
 
   // ----- Output -----
-  if (existsSync(outDir)) rmSync(outDir, { recursive: true, force: true });
   mkdirSync(join(outDir, "dashboard"), { recursive: true });
   mkdirSync(join(outDir, "screenshots"), { recursive: true });
   writeFileSync(join(outDir, "board.json"), JSON.stringify({ rows, excluded }, null, 2) + "\n");
