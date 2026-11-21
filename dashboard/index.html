@@ -1,94 +1,27 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Token Radar — pre-token protocols ranked by implied value</title>
-<link rel="stylesheet" href="app.css">
-</head>
-<body>
-<a class="skip" href="#board">Skip to the board</a>
-<header class="top">
-  <div class="brand">
-    <span class="mark" aria-hidden="true">&#9679;</span>
-    <div>
-      <h1>Token Radar</h1>
-      <p class="tagline">Which pre-token protocol is worth farming next — and what to do about it.</p>
-    </div>
-  </div>
-  <div class="asof" id="asof"></div>
-</header>
-<main id="board" tabindex="-1">
-  <section class="stats" id="stats" aria-label="Snapshot summary"></section>
-  <nav class="tabs" aria-label="Views">
-    <button type="button" data-tab="board" class="active">Board</button>
-    <button type="button" data-tab="live">Live tokens</button>
-    <button type="button" data-tab="model">How the model works</button>
-  </nav>
-  <section id="view-board">
-    <div class="filters" role="search">
-      <label>Search <input id="q" type="search" placeholder="Name or slug…" autocomplete="off"></label>
-      <label>Category <select id="category"><option value="all">All categories</option></select></label>
-      <label>Chain <select id="chain"><option value="all">All chains</option></select></label>
-      <label>Min TVL <select id="mintvl">
-        <option value="0">Any</option>
-        <option value="5000000">$5M+</option>
-        <option value="50000000">$50M+</option>
-        <option value="100000000">$100M+</option>
-        <option value="1000000000">$1B+</option>
-      </select></label>
-      <label class="check"><input id="watchlist" type="checkbox"> Watchlist only</label>
-      <span class="count" id="count"></span>
-    </div>
-    <div class="tablewrap">
-      <table id="table">
-        <thead><tr>
-          <th data-sort="rank">Rank</th>
-          <th data-sort="name">Protocol</th>
-          <th data-sort="category">Category</th>
-          <th data-sort="chains">Chains</th>
-          <th data-sort="tvl_usd">TVL</th>
-          <th data-sort="change_7d">7d</th>
-          <th data-sort="age_days">Age</th>
-          <th data-sort="implied_value_usd">Implied value</th>
-        </tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
-    </div>
-    <p class="note" id="board-note"></p>
-  </section>
-  <section id="view-live" hidden>
-    <p class="lede">Protocols whose token already trades. The board shows the market's own value for these — never a model's guess — and they are the comparables the multiples come from.</p>
-    <div class="tablewrap">
-      <table id="livetable">
-        <thead><tr>
-          <th>Protocol</th><th>Category</th><th>Chains</th><th>TVL</th><th>Market cap</th><th>Mcap / TVL</th><th>7d</th>
-        </tr></thead>
-        <tbody id="liverows"></tbody>
-      </table>
-    </div>
-  </section>
-  <section id="view-model" hidden>
-    <div id="model-explainer"></div>
-    <h2>Category multiples</h2>
-    <p class="lede">Median market-cap-per-TVL of the live-token protocols in each category. Categories with fewer than three live protocols use the global median.</p>
-    <div class="tablewrap">
-      <table id="comptable">
-        <thead><tr><th>Category</th><th>Live comparables</th><th>Multiple</th></tr></thead>
-        <tbody id="comprows"></tbody>
-      </table>
-    </div>
-    <h2>Market-fit check</h2>
-    <p class="lede" id="fit-text"></p>
-    <canvas id="fitchart" width="880" height="360" aria-label="Scatter chart of market cap against TVL for live-token protocols"></canvas>
-    <p class="note">The fit is a check on the model, never an input to it. The board's values come from the category multiples above.</p>
-  </section>
-</main>
-<aside id="drawer" class="drawer" hidden aria-label="Protocol detail"></aside>
-<footer class="foot">
-  <p>Data: the sealed snapshot, fetched once from the DefiLlama public API. “Records no token” means the record carries none — a protocol may still have a token its record does not carry. Implied values are this radar's own claim, not a prediction that a token will be issued or what it will be worth. Nothing here is financial advice.</p>
-</footer>
-<script src="../data.js"></script>
-<script src="app.js"></script>
-</body>
-</html>
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Token Launch Radar — 614 pre-token protocols, ranked by implied value</title>
+<link rel="stylesheet" href="styles.css"></head>
+<body><header><h1>Token Launch Radar</h1>
+<p class="sub">614 protocols that record no token, ranked by implied value — fair value from a regression fitted on 144 token protocols, times the odds of launching, from peers' track record. Snapshot 2026-11-14.</p>
+<div id="kpis" class="kpis"></div></header>
+<main>
+<section class="panel"><h2>How this radar works</h2>
+<p>Stage 1 fits <b>log(market cap) = a + b·log(TVL)</b> on the 144 protocols whose token trades (128 with mcap &gt; 0 and TVL &gt; 0; 15 with mcap = 0 are dead tokens and are excluded). Stage 2 fits the residual on 7-day growth and log(age) — growth and age move the multiple only slightly in the data, so their effect is shrunk ×0.5 and clamped. <b>Token odds</b> come from each category's launch rate (shrunk toward the global 19%) times an age-band factor. <b>Implied value = fair value × odds</b> — an expected value, not a prediction of if or when a token launches. No protocol name is hardcoded. Growth is in percent in the snapshot (÷100, clamped −0.9…+5.0); a missing listing date counts as 365 days. Gas figures are planning estimates, not live quotes.</p>
+<div class="tabs"><button data-tab="board" class="on">Board</button><button data-tab="model">Model &amp; validation</button><button data-tab="ref">Token protocols (fitting set)</button></div>
+<div id="tab-board">
+<div class="filters"><input id="q" type="search" placeholder="Search name or slug…" aria-label="Search">
+<select id="cat" aria-label="Category"><option value="">All categories</option></select>
+<label><input id="wl" type="checkbox"> Watchlist only</label>
+<label>Min odds <input id="minodds" type="range" min="0" max="50" value="0" step="1"> <span id="minoddsV">0%</span></label>
+<span id="count"></span></div>
+<table><thead><tr><th data-s="rank">#</th><th data-s="name">Protocol</th><th data-s="cat">Category</th><th data-s="tvl">TVL</th><th data-s="growth">Growth 7d</th><th data-s="age">Age</th><th data-s="odds">Odds</th><th data-s="ev">Implied value</th></tr></thead>
+<tbody id="rows"></tbody></table>
+<div id="detail" class="detail"></div>
+</div>
+<div id="tab-model" hidden><div id="model"></div></div>
+<div id="tab-ref" hidden><p>These 144 protocols already have a token that trades. They are the <b>fitting set</b> — their actual market caps trained the regression. They are <b>not</b> on the board and their values here are actual market caps, not estimates.</p><table><thead><tr><th>#</th><th>Protocol</th><th>Market cap (actual)</th></tr></thead><tbody id="refrows"></tbody></table></div>
+</section></main>
+<footer><p>Data: DefiLlama snapshot 2026-11-14. Implied values are this radar's own estimates, never a promise. Farm plans are planning estimates — check fees and risks yourself before moving funds.</p></footer>
+<script src="data.js"></script><script src="app.js"></script></body></html>
