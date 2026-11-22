@@ -9,9 +9,22 @@
 <body>
 <header>
 <h1 id="title">Token Launch Radar</h1>
-<p class="sub">Pre-token protocols ranked by expected value (fitted fair value &times; token-launch odds), from the 2026-11-14 DefiLlama snapshot. No name is hardcoded.</p>
+<p class="sub">Pre-token protocols ranked by expected value (fitted fair value &times; token-launch odds), from the 2026-11-14 DefiLlama snapshot.</p>
 </header>
 <section id="kpis" class="panel"></section>
+<p id="exclLine" class="muted">18 excluded — brand already has a token (list below)</p>
+<section class="panel" id="howto">
+<h2>How this radar works</h2>
+<div class="method-cols">
+<p><b>Value model.</b> A log-log regression fitted on the 144 token-bearing protocols in this snapshot: log(market cap) = intercept + slope &times; log(TVL), plus a small second-stage adjustment for 7-day growth and protocol age (coefficients halved, total clamped to &plusmn;0.35 log points; the second stage's intercept is not applied). The model uses a pooled intercept: category-specific intercepts were also fitted, but they did not beat pooled on unseen data, so the pooled model is used.</p>
+<p><b>Odds.</b> A protocol's chance of launching a token is estimated from its peers: its category's token rate, shrunk toward the 19% global rate, times an age-band factor (young protocols launch far less often), clamped to 2&ndash;50%.</p>
+<p><b>Expected value.</b> Implied value = fitted fair value &times; odds. It is what a token would be worth <i>if</i> one launched and the protocol's record stayed as it is — not a prediction that one will launch, or when.</p>
+<p><b>Farm plans.</b> Six concrete steps per protocol, in English, with amounts per tier (Small $100 / Medium $1,000 / Large $10,000), gas and time. Gas is a planning estimate, not a live quote.</p>
+</div>
+<h3>Integrity strip</h3>
+<p>A pre-token protocol is left off this board when another protocol with the same brand stem already has a token trading. <span id="exclN"></span></p>
+<ul id="excluded"></ul>
+</section>
 <section class="panel">
 <h2>Find a protocol</h2>
 <div class="controls">
@@ -28,16 +41,6 @@
 </table>
 </section>
 <section id="detail" class="panel" hidden></section>
-<section class="panel">
-<h2>How this radar works</h2>
-<p><b>Value model.</b> A log-log regression fitted on the 144 token-bearing protocols in this snapshot: log(market cap) = intercept + slope &times; log(TVL), then a small second-stage adjustment for 7-day growth and protocol age (both coefficients halved, total adjustment clamped to &plusmn;0.35 log points). The second stage's intercept is <i>not</i> applied — it is a mean offset of the fitting subset, not a signal. The model uses a pooled intercept: category-specific intercepts were also fitted, but rejected — they won held-out data by only ~3% (mean median |log error| 1.080 vs 1.114) and lost walk-forward (1.258 vs 1.214), so the pooled model is used. The resulting values are the radar's own claim, not a prediction that a token will launch.</p>
-<p><b>Odds.</b> A protocol's chance of launching a token is estimated from its peers: its category's token rate, shrunk toward the 19% global rate, times an age-band factor (young protocols launch far less often), clamped to 2&ndash;50%.</p>
-<p><b>Expected value.</b> Implied value = fitted fair value &times; odds. It is the radar's own claim about what a token would be worth <i>if</i> one launched and the protocol's record stayed as it is — not a prediction that one will launch, or when.</p>
-<p><b>Farm plans.</b> Six concrete steps per protocol, in English, with amounts per tier (Small $100 / Medium $1,000 / Large $10,000), gas and time. Gas is a planning estimate, not a live quote.</p>
-<h3>Integrity strip</h3>
-<p>A pre-token protocol is left off this board when another protocol with the same brand stem already has a token trading (stem = slug minus a trailing version suffix, first segment). <span id="exclN"></span></p>
-<ul id="excluded"></ul>
-</section>
 <section class="panel">
 <h2>Model</h2>
 <div id="modelParams"></div>

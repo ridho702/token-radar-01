@@ -97,9 +97,11 @@
   }).join("");
   document.getElementById("exclN").textContent =
     META.excludedN + " protocols are excluded — brand already has a token.";
+  document.getElementById("exclLine").textContent =
+    META.excludedN + " excluded — brand already has a token (list below)";
   document.getElementById("excluded").innerHTML = excl.map(function (e) {
-    return "<li><b>" + esc(e.name) + "</b> (" + esc(e.slug) + ") — sibling " + esc(e.sib) +
-      " (mcap " + fmtUsd(e.sibMcap) + ")</li>";
+    return "<li><b>" + esc(e.name) + "</b> — sibling " + esc(e.sib) +
+      " (" + fmtUsd(e.sibMcap) + ")</li>";
   }).join("");
 
   // ---- Board table: filter + sort ----
@@ -135,7 +137,7 @@
       list.length + " of " + rows.length + " shown — click a row for detail.";
     tbody.innerHTML = list.map(function (r) {
       return "<tr data-slug=\"" + esc(r.slug) + "\"><td>" + r.rank + "</td><td><b>" + esc(r.name) + "</b>" +
-        (watch.has(r.slug) ? ' <span class="badge">WATCH</span>' : "") + "<br><span class=\"muted\">" + esc(r.slug) + "</span></td>" +
+        (watch.has(r.slug) ? ' <span class="badge">WATCH</span>' : "") + "</td>" +
         "<td>" + esc(r.cat) + "</td><td class=\"num\">" + fmtUsd(r.tvl) + "</td>" +
         "<td class=\"num\">" + (r.growth >= 0 ? "+" : "") + (r.growth * 100).toFixed(1) + "%</td>" +
         "<td class=\"num\">" + ageStr(r.age) + "</td><td class=\"num\">" + Math.round(r.odds * 100) + "%</td>" +
@@ -163,10 +165,31 @@
   });
 
   // ---- Detail view ----
+  // Stage-1 multiple from the fitted model (META): exp(intercept + slope *
+  // ln(TVL)) / TVL. Stage-2 growth/maturity factors split the clamped
+  // second-stage adjustment proportionally, so growth x maturity =
+  // exp(stage-2 adjustment). Fair value is anchored on the board's own
+  // numbers (implied / odds), so the detail always agrees with the board.
+  function stage1Mult(r) {
+    var m = META.model;
+    return Math.exp(m.intercept + m.slope * Math.log(r.tvl)) / r.tvl;
+  }
+  function stage2Factors(r) {
+    var s2 = META.model.stage2;
+    var raw = 0.5 * s2.growth * r.growth + 0.5 * s2.logAge * Math.log(Math.max(1, r.age));
+    var adj = Math.max(-0.35, Math.min(0.35, raw));
+    var s = raw === 0 ? 1 : adj / raw;
+    return {
+      g: Math.exp(0.5 * s2.growth * r.growth * s),
+      m: Math.exp(0.5 * s2.logAge * Math.log(Math.max(1, r.age)) * s)
+    };
+  }
   function showDetail(slug) {
     var r = rows.filter(function (x) { return x.slug === slug; })[0];
     if (!r) return;
     var fair = Math.round(r.imp / r.odds);
+    var mult = stage1Mult(r);
+    var f = stage2Factors(r);
     var steps = farmSteps(r);
     var d = document.getElementById("detail");
     d.hidden = false;
@@ -174,14 +197,16 @@
       "<p class=\"muted\">" + esc(r.slug) + " · " + esc(r.cat) + " · main chain " + esc(r.chain) + "</p>" +
       "<div class=\"kpis2\">" +
       "<div>TVL<b>" + fmtUsd(r.tvl) + "</b></div>" +
-      "<div>Multiple<b>" + r.mult.toFixed(3) + "×</b></div>" +
+      "<div>Multiple<b>" + mult.toFixed(2) + "×</b></div>" +
       "<div>Growth 7d<b>" + (r.growth >= 0 ? "+" : "") + (r.growth * 100).toFixed(1) + "%</b></div>" +
       "<div>Age<b>" + ageStr(r.age) + "</b></div>" +
       "<div>Token odds<b>" + Math.round(r.odds * 100) + "%</b></div>" +
       "<div>Fair value<b>" + fmtUsd(fair) + "</b></div>" +
       "<div>Expected value<b>" + fmtUsd(r.imp) + "</b></div></div>" +
-      "<p>Expected value = fair value &times; odds: " + fmtUsd(fair) + " &times; " + Math.round(r.odds * 100) + "% = " + fmtUsd(r.imp) + ". " +
-      "The multiple comes from the fitted model (pooled intercept; slope " + META.model.slope + ", intercept " + META.model.intercept + ").</p>" +
+      "<p>TVL " + fmtUsd(r.tvl) + " × multiple " + mult.toFixed(2) + " × growth " + f.g.toFixed(2) +
+      " × maturity " + f.m.toFixed(2) + " = fair value " + fmtUsd(fair) + "; × odds " +
+      Math.round(r.odds * 100) + "% = expected value " + fmtUsd(r.imp) + ". " +
+      "Fair value is what the token would be worth if launched at peers' multiples; odds are the chance it launches at all.</p>" +
       "<h3>Farm plan</h3><ol>" + steps.map(function (s) { return "<li>" + esc(s) + "</li>"; }).join("") + "</ol>";
     d.scrollIntoView({ behavior: "smooth", block: "start" });
   }
